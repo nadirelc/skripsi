@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+
+    <title>Aplikasi Analisis Kualitas Daftar Pustaka</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+
+  </head>
+  <body>
+    <div class="container">
+        <div class="row mt-4">
+            <div class="col-4"> 
+            </div>
+            <div class="col-8">
+                <div class="kotak">
+                  <h2 class="teks">Aplikasi Analisis Kualitas Daftar Pustaka</h2>
+                </div> 
+            </div>
+        </div>
+        <div class="row mt-4">
+          <div class="col-8"> 
+            <div class="kotak">
+              <form action="/refForm" method="post" enctype="multipart/form-data" id="formRef">
+                {% csrf_token %}
+                <div class="mb-3">
+                  <label for="author_1" class="form-label teks">Nama Author 1</label>
+                  <input name="author_1" type="text" class="form-control" id="author_1" Required>
+                </div>
+                <div id="form-author">
+                </div>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                  <button id="add-row" data-jumlah-row="1" class="btn btn-primary" type="button">Tambah Author</button>
+                </div>
+                <div class="mb-3">
+                  <p class="teks">File PDF</p>
+                  <button id="file_button" type="button" class="btn btn-primary">FILE</button>
+                  <button id="url_button" type="button" class="btn btn-primary">URL</button>
+                </div>
+                <div class="mb-3" id="file_pdf_form">
+                  <label for="file_pdf" class="teks">Input File PDF</label>
+                  <input name="file_pdf" type="file" class="form-control-file" id="file_pdf" Required>
+                </div>
+                <div class="mb-3" id="file_url_form">
+                  <label for="url_pdf" class="form-label teks">Input PDF URL</label>
+                  <input  name="url_pdf" name="url_pdf" type="text" class="form-control" id="url_pdf">
+                </div>
+                <button type="submit" class="btn btn-primary" id="submit_btn">Submit</button>
+              </form>
+            </div> 
+          </div>
+
+      </div>
+    </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Aplikasi Analisis Daftar Pustaka</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+        Sistem sedang menganalisis file anda, setelah selesai, file output berbentuk .xlsx akan otomatis terdownload
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Optional JavaScript; choose one of the two! -->
+
+    <!-- Option 1: Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+
+    <!-- Option 2: Separate Popper and Bootstrap JS -->
+    <!--
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
+    -->
+    <script src="https://code.jquery.com/jquery-3.6.0.slim.js" integrity="sha256-HwWONEZrpuoh951cQD1ov2HUK5zA5DwJ1DNUXaM6FsY=" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+      $("#add-row").click(function(){
+        var i = $(this).data("jumlah-row");
+        console.log(i);
+        $('#form-author').append(
+          `<div class="mb-3">
+            <label for="author_${i+1}" class="form-label teks">Nama Author ${i+1}</label>
+            <input name="author_${i+1}" type="text" class="form-control" id="author_${i+1}">
+          </div>`
+        )
+        $("#add-row").data("jumlah-row",i+1);
+      });
+    </script>
+    <script type="text/javascript">
+      $(document).ready(function() {
+          $('#file_url_form').hide();
+      });
+
+      $("#url_button").click(function(){
+        $("#file_pdf").prop('required',false);
+        $("#url_pdf").prop('required',true);
+        $('#file_url_form').show();
+        $('#file_pdf_form').hide();
+      });
+      $("#file_button").click(function(){
+        $("#file_pdf").prop('required',true);
+        $("#url_pdf").prop('required',false);
+        $('#file_url_form').hide();
+        $('#file_pdf_form').show();
+      });
+
+      $('#formRef').submit(function() {
+        $('#exampleModal').modal('show');
+      });
+      
+    </script>
+  </body>
+</html>

@@ -1,0 +1,15 @@
+body {
+    background-image: url('../images/bgskripsi.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.kotak {
+    border-radius: 25px;
+    background: black;
+    padding: 70px;
+}
+
+.teks{
+    color: white;
+}
