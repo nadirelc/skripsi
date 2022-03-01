@@ -216,7 +216,7 @@ def refForm(request):
     #WRITE EXCEL
     workbook = xlsxwriter.Workbook('analisis.xlsx')
     worksheet = workbook.add_worksheet('Output Tabel')
-    worksheet.set_column('B:F', 15)
+    worksheet.set_column('B:G', 15)
 
     worksheet_narasi = workbook.add_worksheet('Output Narasi')
 
@@ -304,12 +304,15 @@ def refForm(request):
     year_percentage_str2 = "%.2f" % year_percentage_str2
     if year_percentage > 20:
         cell_format_year.set_bg_color('red')
-        narasi_year = 'Referensi yang digunakan pada paper ini dianggap hanya mutakhir sebesar ' + str(year_percentage_str2) + '%. Referensi dianggap mutakhir ketika tahun terbit referensi berumur maksimal 10 tahun pada saat sistem digunakan. \n \nReferensi dengan Nomor ' + listToString(year_red_array) + ' tidak mutakhir.'
+        narasi_year = 'Referensi yang digunakan pada paper ini dianggap mutakhir sebesar ' + str(year_percentage_str2) + '%. Referensi dianggap mutakhir ketika tahun terbit referensi berumur maksimal 10 tahun pada saat sistem digunakan. \n \nReferensi dengan Nomor ' + listToString(year_red_array) + ' tidak mutakhir.'
         worksheet_narasi.write('A4', 'Tahun terbit', cell_format_year)
         worksheet_narasi.write('B4', narasi_year, cell_format_primer2)
     else:
         cell_format_year.set_bg_color('#00ac56')
-        narasi_year = 'Referensi yang digunakan pada paper ini dianggap sudah mutakhir sebesar ' + str(year_percentage_str2) + '%. Referensi dianggap mutakhir ketika tahun terbit referensi berumur maksimal 10 tahun pada saat sistem digunakan.'
+        if (len(year_red_array) > 0):
+            narasi_year = 'Referensi yang digunakan pada paper ini dianggap mutakhir sebesar ' + str(year_percentage_str2) + '%. Referensi dianggap mutakhir ketika tahun terbit referensi berumur maksimal 10 tahun pada saat sistem digunakan. \n \nReferensi dengan Nomor ' + listToString(year_red_array) + ' tidak mutakhir.'
+        else:
+            narasi_year = 'Referensi yang digunakan pada paper ini dianggap mutakhir sebesar ' + str(year_percentage_str2) + '%. Referensi dianggap mutakhir ketika tahun terbit referensi berumur maksimal 10 tahun pada saat sistem digunakan.'
         worksheet_narasi.write('A4', 'Tahun terbit', cell_format_year)
         worksheet_narasi.write('B4', narasi_year, cell_format_primer2)
 
@@ -368,7 +371,10 @@ def refForm(request):
         worksheet_narasi.write('B5', narasi_citation, cell_format_primer2)
     else:
         cell_format_citation.set_bg_color('#00ac56')
-        narasi_citation = 'Referensi yang digunakan pada paper ini terindikasi self-citation sebesar ' + str(citation_percentage_str) + '%. Sebuah referensi dianggap self-citation jika nama penulis paper dan nama author pada referensi memiliki kesamaan.'
+        if (len(self_citation_array) > 0):
+            narasi_citation = 'Referensi yang digunakan pada paper ini terindikasi self-citation sebesar ' + str(citation_percentage_str) + '%. Sebuah referensi dianggap self-citation jika nama penulis paper dan nama author pada referensi memiliki kesamaan.  \n \nReferensi dengan Nomor ' + listToString(self_citation_array) +' terindikasi self-citation.'
+        else:
+            narasi_citation = 'Referensi yang digunakan pada paper ini terindikasi self-citation sebesar ' + str(citation_percentage_str) + '%. Sebuah referensi dianggap self-citation jika nama penulis paper dan nama author pada referensi memiliki kesamaan.'
         worksheet_narasi.write('A5', 'Self Citation', cell_format_citation)
         worksheet_narasi.write('B5', narasi_citation, cell_format_primer2)
 
@@ -717,7 +723,10 @@ def refForm(request):
         worksheet_narasi.write('B6', narasi_primer, cell_format_primer2)
     else:
         cell_format_primer.set_bg_color('#00ac56')
-        narasi_primer = 'Referensi yang digunakan pada paper ini menggunakan acuan primer sebesar ' + str(primer_percentage_str2) +'%. Referensi dianggap beracuan primer ketika referensi tersebut berasal dari Jurnal, Conference, Buku, Thesis, dan Disertasi.'
+        if (len(primer_array3) > 0):
+            narasi_primer = 'Referensi yang digunakan pada paper ini menggunakan acuan primer sebesar ' + str(primer_percentage_str2) +'%. Referensi dianggap beracuan primer ketika referensi tersebut berasal dari Jurnal, Conference, Buku, Thesis, dan Disertasi.  \n \nReferensi dengan Nomor ' + listToString(primer_array3) +' tidak beracuan primer.'
+        else:
+            narasi_primer = 'Referensi yang digunakan pada paper ini menggunakan acuan primer sebesar ' + str(primer_percentage_str2) +'%. Referensi dianggap beracuan primer ketika referensi tersebut berasal dari Jurnal, Conference, Buku, Thesis, dan Disertasi.'
         worksheet_narasi.write('A6', 'Acuan Primer', cell_format_primer)
         worksheet_narasi.write('B6', narasi_primer, cell_format_primer2)
 
@@ -759,11 +768,14 @@ def refForm(request):
     reputasi_percentage_str2 = "%.2f" % reputasi_percentage_str2
 
     if reputasi_percentage > 20:
-        narasi_reputasi = 'Referensi yang digunakan pada pada paper ini masuk kedalam white list scopus sebesar ' + str(reputasi_percentage_str2) + '%.'
+        narasi_reputasi = 'Referensi yang digunakan pada pada paper ini masuk kedalam white list scopus sebesar ' + str(reputasi_percentage_str2) + '%.\n \nRefernsi dengan Nomor '+ listToString(reputasi_array3) +' terindeks dalam white list scopus'
         worksheet_narasi.write('A8', 'White List', cell_format_reputasi)
         worksheet_narasi.write('B8', narasi_reputasi, cell_format_reputasi)
     else:
-        narasi_reputasi = 'Referensi yang digunakan pada pada paper ini masuk kedalam white list scopus sebesar ' + str(reputasi_percentage_str2) +'%.'
+        if (len(reputasi_array3) > 0):
+            narasi_reputasi = 'Referensi yang digunakan pada pada paper ini masuk kedalam white list scopus sebesar ' + str(reputasi_percentage_str2) +'%. \n \nRefernsi dengan Nomor '+ listToString(reputasi_array3) +' terindeks dalam white list scopus'
+        else:
+            narasi_reputasi = 'Referensi yang digunakan pada pada paper ini masuk kedalam white list scopus sebesar ' + str(reputasi_percentage_str2) +'%.'
         worksheet_narasi.write('A8', 'White List', cell_format_reputasi)
         worksheet_narasi.write('B8', narasi_reputasi, cell_format_reputasi)
 
@@ -790,11 +802,14 @@ def refForm(request):
     predatory_percentage_str2 = "%.2f" % predatory_percentage_str2
 
     if predatory_percentage > 20:
-        narasi_predatory = 'Referensi yang digunakan pada pada paper ini masuk kedalam black list sebesar ' + str(predatory_percentage_str2) + '%. Data black list yang digunakan berasal dari bealls list'
+        narasi_predatory = 'Referensi yang digunakan pada pada paper ini masuk kedalam black list sebesar ' + str(predatory_percentage_str2) + '%. Data black list yang digunakan berasal dari bealls list. \n \nReferensi dengan Nomor'+ listToString(predatory_array3) +'terindeks dalam black list.' 
         worksheet_narasi.write('A9', 'Black List', cell_format_predatory)
         worksheet_narasi.write('B9', narasi_predatory, cell_format_predatory)
     else:
-        narasi_predatory = 'Referensi yang digunakan pada pada paper ini masuk kedalam black list sebesar ' + str(predatory_percentage_str2) +'%. Data black list yang digunakan berasal dari bealls list'
+        if (len(predatory_array3) > 0):
+            narasi_predatory = 'Referensi yang digunakan pada pada paper ini masuk kedalam black list sebesar ' + str(predatory_percentage_str2) +'%. Data black list yang digunakan berasal dari bealls list. \n \nReferensi dengan Nomor'+ listToString(predatory_array3) +'terindeks dalam black list.'
+        else:
+            narasi_predatory = 'Referensi yang digunakan pada pada paper ini masuk kedalam black list sebesar ' + str(predatory_percentage_str2) +'%. Data black list yang digunakan berasal dari bealls list'
         worksheet_narasi.write('A9', 'Black List', cell_format_predatory)
         worksheet_narasi.write('B9', narasi_predatory, cell_format_predatory)
 
