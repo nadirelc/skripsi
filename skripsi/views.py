@@ -15,6 +15,10 @@ import xlsxwriter
 import datetime
 import unidecode
 import openpyxl
+import re
+import slate3k
+import urllib.request
+import io
 
 
 def index(request):
@@ -199,6 +203,7 @@ def refForm(request):
 
     if url_pdf != '':
         references = extract_references_from_url(url_pdf)
+        file_name = ""
         #print("INI URL PDF", url_pdf)
     else:
         file_pdf = request.FILES['file_pdf']
@@ -216,7 +221,7 @@ def refForm(request):
     #WRITE EXCEL
     workbook = xlsxwriter.Workbook('analisis.xlsx')
     worksheet = workbook.add_worksheet('Output Tabel')
-    worksheet.set_column('B:G', 15)
+    worksheet.set_column('B:H', 15)
 
     worksheet_narasi = workbook.add_worksheet('Output Narasi')
 
@@ -233,17 +238,21 @@ def refForm(request):
     worksheet.write('C1', 'Self Citation')
     worksheet.write('D1', 'Acuan Primer')
     worksheet.write('E1', 'Tahun Terbit')
-    worksheet.write('F1', 'White List')
-    worksheet.write('G1', 'Black List')
+    worksheet.write('F1', 'Tersitasi Pada Paper')
+    worksheet.write('G1', 'White List')
+    worksheet.write('H1', 'Black List')
     
     # WRITE ALL FORMAT TO LENGKAP AND SUMBER REPUTASI TIDAK
     row = 1
+    cell_format_sitasi = workbook.add_format()
+    cell_format_sitasi.set_bg_color('red')
     cell_format4 = workbook.add_format()
     cell_format4.set_bg_color('yellow')
     for ref in references:
         worksheet.write(row, 1, "Lengkap")
-        worksheet.write(row, 5, "Mungkin Tidak", cell_format4)
+        worksheet.write(row, 5, "Tidak Tersitasi", cell_format_sitasi)
         worksheet.write(row, 6, "Mungkin Tidak", cell_format4)
+        worksheet.write(row, 7, "Mungkin Tidak", cell_format4)
         row += 1
 
     #SAVING ARRAY RAW_REF
@@ -386,7 +395,55 @@ def refForm(request):
     for ref in references:
         worksheet.write(row, 3, "Mungkin tidak", cell_format)
         row += 1
+
+    #KELENGKAPAN SITASI
+    len_ref = len(references)
+    len_ref = int(references[len_ref-1]['linemarker'][0])
+    string_inside_brackets = []
+
+    if url_pdf != '':
+        req = urllib.request.Request(url_pdf, headers={'User-Agent' : "Magic Browser"})
+        #SUDAH TIDAK DIGUNAKAN, HANYA MENERIMA INPUT FILE
+        #remote_file = urllib.request.urlopen(req).read()
+        #pdf_citation = io.BytesIO(remote_file)
+        #pdfReader = PyPDF2.PdfFileReader(pdf_citation, strict=False)
+    else:
+        with open(file_name,'rb') as f:
+            extracted_text = slate3k.PDF(f)
+
+    object_string = str(extracted_text)
+
+    s_filter  = ' '.join(re.findall('\[([^a-z^A-Z]+)\]', object_string))
+    print(s_filter)
+    s_filter = s_filter.replace("\n", " ")
+    s_filter = s_filter.replace(",", " ")
+    s_filter = s_filter.replace("[", " ")
+    s_filter = s_filter.replace("]", " ")
+    array_text_sitasi = s_filter.split(' ')
+
+    for val_array_text in array_text_sitasi:
+        if '-' in val_array_text:
+            try:
+                res = sum(((list(range(*[int(b) + c  
+                    for c, b in enumerate(a.split('-'))]))
+                    if '-' in a else [int(a)]) for a in val_array_text.split(', ')), [])
+                string_inside_brackets += res
+            except:
+                print("Masuk Except")
+
+    array_text_sitasi = array_text_sitasi[:-len_ref]
+
+    for val_string in string_inside_brackets:
+        array_text_sitasi.append(str(val_string))
+
+    print(array_text_sitasi)
         
+    row = 1
+    for ref in references:
+        if ref['linemarker'][0] in array_text_sitasi:
+            worksheet.write(row, 5, "Tersitasi")
+        row += 1
+    # END KELENGKAPAN SITASI
 
     #Write Acuan Primer & Format & Sumber reputasi
 
@@ -422,11 +479,11 @@ def refForm(request):
             primer += 1
             primer_array.append(str(i+1))
             if sumberReputasi(ref, 'jurnal'):
-                worksheet.write(row, 5, "Iya")
+                worksheet.write(row, 6, "Iya")
                 reputasi += 1
                 reputasi_array.append(str(i+1))
             if sumberReputasi(ref, 'predatory'):
-                worksheet.write(row, 6, "Iya")
+                worksheet.write(row, 7, "Iya")
                 predatory += 1
                 predatory_array.append(str(i+1))
         elif 'journal_volume' in ref:
@@ -438,11 +495,11 @@ def refForm(request):
             primer += 1
             primer_array.append(str(i+1))
             if sumberReputasi(ref, 'jurnal'):
-                worksheet.write(row, 5, "Iya")
+                worksheet.write(row, 6, "Iya")
                 reputasi += 1
                 reputasi_array.append(str(i+1))
             if sumberReputasi(ref, 'predatory'):
-                worksheet.write(row, 6, "Iya")
+                worksheet.write(row, 7, "Iya")
                 predatory += 1
                 predatory_array.append(str(i+1))
         elif 'journal_year' in ref:
@@ -454,11 +511,11 @@ def refForm(request):
             primer += 1
             primer_array.append(str(i+1))
             if sumberReputasi(ref, 'jurnal'):
-                worksheet.write(row, 5, "Iya")
+                worksheet.write(row, 6, "Iya")
                 reputasi += 1
                 reputasi_array.append(str(i+1))
             if sumberReputasi(ref, 'predatory'):
-                worksheet.write(row, 6, "Iya")
+                worksheet.write(row, 7, "Iya")
                 predatory += 1
                 predatory_array.append(str(i+1))
         elif 'journal_page' in ref:
@@ -470,11 +527,11 @@ def refForm(request):
             primer += 1
             primer_array.append(str(i+1))
             if sumberReputasi(ref, 'jurnal'):
-                worksheet.write(row, 5, "Iya")
+                worksheet.write(row, 6, "Iya")
                 reputasi += 1
                 reputasi_array.append(str(i+1))
             if sumberReputasi(ref, 'predatory'):
-                worksheet.write(row, 6, "Iya")
+                worksheet.write(row, 7, "Iya")
                 predatory += 1
                 predatory_array.append(str(i+1))
         elif 'journal_references' in ref:
@@ -486,11 +543,11 @@ def refForm(request):
             primer += 1
             primer_array.append(str(i+1))
             if sumberReputasi(ref, 'jurnal'):
-                worksheet.write(row, 5, "Iya")
+                worksheet.write(row, 6, "Iya")
                 reputasi += 1
                 reputasi_array.append(str(i+1))
             if sumberReputasi(ref, 'predatory'):
-                worksheet.write(row, 6, "Iya")
+                worksheet.write(row, 7, "Iya")
                 predatory += 1
                 predatory_array.append(str(i+1))
         elif 'misc' in ref:
@@ -503,11 +560,11 @@ def refForm(request):
                 primer += 1
                 primer_array.append(str(i+1))
                 if sumberReputasi(ref, 'jurnal'):
-                    worksheet.write(row, 5, "Iya")
+                    worksheet.write(row, 6, "Iya")
                     reputasi += 1
                     reputasi_array.append(str(i+1))
                 if sumberReputasi(ref, 'predatory'):
-                    worksheet.write(row, 6, "Iya")
+                    worksheet.write(row, 7, "Iya")
                     predatory += 1
                     predatory_array.append(str(i+1))
             elif 'Jurnal' in listToString(ref['misc']):
@@ -519,11 +576,11 @@ def refForm(request):
                 primer += 1
                 primer_array.append(str(i+1))
                 if sumberReputasi(ref, 'jurnal'):
-                    worksheet.write(row, 5, "Iya")
+                    worksheet.write(row, 6, "Iya")
                     reputasi += 1
                     reputasi_array.append(str(i+1))
                 if sumberReputasi(ref, 'predatory'):
-                    worksheet.write(row, 6, "Iya")
+                    worksheet.write(row, 7, "Iya")
                     predatory += 1
                     predatory_array.append(str(i+1))
             #CONFERENCE & PROCEEDINGS
@@ -536,7 +593,7 @@ def refForm(request):
                     format_lengkap += 1
                     format_lengkap_array.append(str(i+1))
                 if sumberReputasi(ref, 'conf'):
-                    worksheet.write(row, 5, "Iya")
+                    worksheet.write(row, 6, "Iya")
                     reputasi += 1
                     reputasi_array.append(str(i+1))
             elif 'Proceeding' in listToString(ref['misc']):
@@ -548,7 +605,7 @@ def refForm(request):
                     format_lengkap += 1
                     format_lengkap_array.append(str(i+1))
                 if sumberReputasi(ref, 'conf'):
-                    worksheet.write(row, 5, "Iya")
+                    worksheet.write(row, 6, "Iya")
                     reputasi += 1
                     reputasi_array.append(str(i+1))
             elif 'Proc.' in listToString(ref['misc']):
@@ -560,7 +617,7 @@ def refForm(request):
                     format_lengkap += 1
                     format_lengkap_array.append(str(i+1))
                 if sumberReputasi(ref, 'conf'):
-                    worksheet.write(row, 5, "Iya")
+                    worksheet.write(row, 6, "Iya")
                     reputasi += 1
                     reputasi_array.append(str(i+1))
             elif 'Conf.' in listToString(ref['misc']):
@@ -572,7 +629,7 @@ def refForm(request):
                     format_lengkap += 1
                     format_lengkap_array.append(str(i+1))
                 if sumberReputasi(ref, 'conf'):
-                    worksheet.write(row, 5, "Iya")
+                    worksheet.write(row, 6, "Iya")
                     reputasi += 1
                     reputasi_array.append(str(i+1))
             elif 'Proceedings' in listToString(ref['misc']):
@@ -584,7 +641,7 @@ def refForm(request):
                     format_lengkap += 1
                     format_lengkap_array.append(str(i+1))
                 if sumberReputasi(ref, 'conf'):
-                    worksheet.write(row, 5, "Iya")
+                    worksheet.write(row, 6, "Iya")
                     reputasi += 1
                     reputasi_array.append(str(i+1))
             elif 'Konferensi' in listToString(ref['misc']):
@@ -596,7 +653,7 @@ def refForm(request):
                     format_lengkap += 1
                     format_lengkap_array.append(str(i+1))
                 if sumberReputasi(ref, 'conf'):
-                    worksheet.write(row, 5, "Iya")
+                    worksheet.write(row, 6, "Iya")
                     reputasi += 1
                     reputasi_array.append(str(i+1))
 
@@ -650,11 +707,11 @@ def refForm(request):
                 primer_array.append(str(i+1))
                 worksheet.write(row, 3, "Iya")
                 if sumberReputasi(ref, 'jurnal'):
-                    worksheet.write(row, 5, "Iya")
+                    worksheet.write(row, 6, "Iya")
                     reputasi += 1
                     reputasi_array.append(str(i+1))
                 if sumberReputasi(ref, 'predatory'):
-                    worksheet.write(row, 6, "Iya")
+                    worksheet.write(row, 7, "Iya")
                     predatory += 1
                     predatory_array.append(str(i+1))
             #PP DI KOMEN SEMENTARA
@@ -675,11 +732,11 @@ def refForm(request):
                 primer += 1
                 primer_array.append(str(i+1))
                 if sumberReputasi(ref, 'jurnal'):
-                    worksheet.write(row, 5, "Iya")
+                    worksheet.write(row, 6, "Iya")
                     reputasi += 1
                     reputasi_array.append(str(i+1))
                 if sumberReputasi(ref, 'predatory'):
-                    worksheet.write(row, 6, "Iya")
+                    worksheet.write(row, 7, "Iya")
                     predatory += 1
                     predatory_array.append(str(i+1))
             else:
@@ -815,7 +872,13 @@ def refForm(request):
 
     workbook.close()
 
-    os.remove(os.path.join(settings.MEDIA_ROOT, file_name))
+    if file_name != "":
+        os.remove(os.path.join(settings.MEDIA_ROOT, file_name))
+
+    if url_pdf != '':
+        file_name_analisis = url_pdf + '_analisis.xlsx'
+    else:
+        file_name_analisis = file_pdf.name[:-4] + '_analisis.xlsx'
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     filepath = BASE_DIR + '/analisis.xlsx' 
@@ -823,8 +886,7 @@ def refForm(request):
     if os.path.exists(file_path):
         with open(file_path, 'rb') as fh:
             response = HttpResponse(fh.read(), content_type="application/vnd.ms-excel")
-            response['Content-Disposition'] = 'inline; filename=' + os.path.basename(file_path)
+            response['Content-Disposition'] = 'inline; filename=' + os.path.basename(file_name_analisis)
             return response
     raise Http404
-
    
