@@ -99,24 +99,87 @@ def refForm(request):
     #FUNCTION FOR SYSTEM
 
     def cekJurnalIlmiah(ref):
+        detail_format = []
         if 'vol. ' not in listToString(ref['raw_ref']):
-            return True
+            detail_format.append("*V")
         if 'no. ' not in listToString(ref['raw_ref']):
-            return True
+            detail_format.append("*N")
         if 'p. ' not in listToString(ref['raw_ref']):
-            return True
+            detail_format.append("*P")
+        if 'year' not in ref:
+            detail_format.append("*T")
         
-        return False
+        ####### CEK APAKAH ADA NAMA JURNAL APDA REFERENSI ##########
+        ref_judul = listToString(ref['raw_ref'])
+        #UNTUJK YANG MENGGUNAKAN PETIK MIRING
+        ref_judul2 = ref_judul.split('“')
+        if len(ref_judul2) > 1:
+            ref_judul2 = ref_judul2[1].split('”')
+            if len(ref_judul2) > 1:
+                ref_judul2 = ref_judul2[1].split(',')
+                ref_judul2 = ref_judul2[0]
+                ref_judul2 = ref_judul2[1:]
+                #print(ref_judul2)
+            else:
+                detail_format.append("*NJ")
+        #UNTUK PETIK BIASA
+        else:
+            ref_judul2 = ref_judul.split('"')
+            if len(ref_judul2) > 2:
+                ref_judul2 = ref_judul2[2].split(',')
+                ref_judul2 = ref_judul2[0]
+                ref_judul2 = ref_judul2[1:]
+                #print(ref_judul2)
+            else:
+                detail_format.append("*NJ")
+        
+        #print("INI JUDUL 2 YG ERROR = ", ref_judul2)
+        #ref_judul2 = remove_stopwords(ref_judul2)
+        #array_text = ref_judul2.split()
+        #for i in range(len(array_text)):
+        #    if array_text[i] in abv_dict:
+        #        array_text[i] = abv_dict[array_text[i]]
+        #        
+        #ref_judul2 = listToString(array_text)
+
+        return detail_format
 
     def cekConference(ref):
+        detail_format = []
         if cekIsBuku(ref):
             # TES TIDAK MENGGUNAKAN Pages
             if 'p. ' in listToString(ref['raw_ref']):
-               return False
+               pass
             else:
-               return True        
+               detail_format.append("*P")        
         else:
-            return True
+            detail_format.append("*K")
+        
+        ####### CEK APAKAH ADA NAMA JURNAL APDA REFERENSI ##########
+        ref_judul = listToString(ref['raw_ref'])
+        #UNTUJK YANG MENGGUNAKAN PETIK MIRING
+        ref_judul2 = ref_judul.split('“')
+        if len(ref_judul2) > 1:
+            ref_judul2 = ref_judul2[1].split('”')
+            if len(ref_judul2) > 1:
+                ref_judul2 = ref_judul2[1].split(',')
+                ref_judul2 = ref_judul2[0]
+                ref_judul2 = ref_judul2[1:]
+                #print(ref_judul2)
+            else:
+                detail_format.append("*NJ")
+        #UNTUK PETIK BIASA
+        else:
+            ref_judul2 = ref_judul.split('"')
+            if len(ref_judul2) > 2:
+                ref_judul2 = ref_judul2[2].split(',')
+                ref_judul2 = ref_judul2[0]
+                ref_judul2 = ref_judul2[1:]
+                #print(ref_judul2)
+            else:
+                detail_format.append("*NJ")
+
+        return detail_format
         
     def listToString(s): 
         # initialize an empty string
@@ -197,7 +260,20 @@ def refForm(request):
         author = request.POST.get(name_form)
         if author != None:
             array_author.append(author)
-
+    
+    #MENGHILANGKAN AKSEN
+    for i in range(len(array_author)):
+        array_author[i] = (unidecode.unidecode(array_author[i]))
+    
+    #Menyingkat nama depan
+    for i in range(len(array_author)):
+        split_name = array_author[i].split()
+        first_name = ""
+        for j in range(len(split_name) - 1):
+            first_name = first_name + split_name[j][0] + ". "
+        array_author[i] = first_name + split_name[len(split_name) - 1]
+    
+    print(array_author)
     #GETTING THE PDF FILE by URL
     url_pdf = request.POST.get("url_pdf")
 
@@ -222,6 +298,7 @@ def refForm(request):
     workbook = xlsxwriter.Workbook('analisis.xlsx')
     worksheet = workbook.add_worksheet('Output Tabel')
     worksheet.set_column('B:H', 15)
+    worksheet.set_column('J:J', 80)
 
     worksheet_narasi = workbook.add_worksheet('Output Narasi')
 
@@ -241,6 +318,15 @@ def refForm(request):
     worksheet.write('F1', 'Tersitasi Pada Paper')
     worksheet.write('G1', 'White List')
     worksheet.write('H1', 'Black List')
+
+    #WRITE TIDAK LENGKAP information
+    worksheet.write('J2', '*P = Tidak terdapat Page (p. / pp.)')
+    worksheet.write('J3', '*V = Tidak terdapat Volume (vol.)')
+    worksheet.write('J4', '*N = Tidak terdapat Nomor jurnal (no.)')
+    worksheet.write('J5', '*K = Tidak terdapat Tempat/kota publikasi (Buku/Conference)')
+    worksheet.write('J6', '*T = Tidak terdapat Tahun terbit')
+    worksheet.write('J7', '*NJ = Tidak terdapat Nama Jurnal')
+    worksheet.write('J7', '*TT = Referensi Tidak Teridenfitikasi, sehingga dianggap tidak lengkap')
     
     # WRITE ALL FORMAT TO LENGKAP AND SUMBER REPUTASI TIDAK
     row = 1
@@ -289,7 +375,7 @@ def refForm(request):
             year_red += 1
             year_red_array.append(str(i+1))
             cell_format.set_bg_color('red')
-            worksheet.write(row, 1, "Tidak Lengkap", cell_format)
+            worksheet.write(row, 1, "Tidak Lengkap (*T)", cell_format)
         elif (int(year_now) - int(ref[0])) > 10:
             year_red += 1
             year_red_array.append(str(i+1))
@@ -339,7 +425,8 @@ def refForm(request):
             #TIDAK ADA AUTHOR TIDAK LENGKAP
             #worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
         row += 1
-        
+    for i in range(len(ref_author)):
+        ref_author[i] = (unidecode.unidecode(ref_author[i][0]))
     #Write Self Citation Tidak
     row = 1
     for ref in references:
@@ -351,18 +438,15 @@ def refForm(request):
     self_citation = 0
     self_citation_array = []
     self_citation_total = len(ref_author)
+
     for i, ref in enumerate(ref_author):
         cell_format = workbook.add_format()
         cell_format.set_bg_color('yellow')
         for author_name in array_author:
-            split_name = author_name.split()
-            for splitted in split_name:
-                if len(splitted) > 2:                
-                    if splitted in ref[0]:
-                        self_citation += 1
-                        self_citation_array.append(str(i+1))
-                        worksheet.write(row, 2, "Iya", cell_format)
-
+            if author_name in ref:
+                self_citation += 1
+                self_citation_array.append(str(i+1))
+                worksheet.write(row, 2, "Iya", cell_format)
         row += 1
     
     #WRITE SELF CITATION IN OUTPUT NARASI
@@ -397,6 +481,7 @@ def refForm(request):
         row += 1
 
     #KELENGKAPAN SITASI
+    not_citated = []
     len_ref = len(references)
     len_ref = int(references[len_ref-1]['linemarker'][0])
     string_inside_brackets = []
@@ -414,7 +499,6 @@ def refForm(request):
     object_string = str(extracted_text)
 
     s_filter  = ' '.join(re.findall('\[([^a-z^A-Z]+)\]', object_string))
-    print(s_filter)
     s_filter = s_filter.replace("\n", " ")
     s_filter = s_filter.replace(",", " ")
     s_filter = s_filter.replace("[", " ")
@@ -435,14 +519,15 @@ def refForm(request):
 
     for val_string in string_inside_brackets:
         array_text_sitasi.append(str(val_string))
-
-    print(array_text_sitasi)
         
     row = 1
     for ref in references:
         if ref['linemarker'][0] in array_text_sitasi:
             worksheet.write(row, 5, "Tersitasi")
+        else :
+            not_citated.append(ref['linemarker'][0])
         row += 1
+    
     # END KELENGKAPAN SITASI
 
     #Write Acuan Primer & Format & Sumber reputasi
@@ -471,8 +556,9 @@ def refForm(request):
     for i, ref in enumerate(references):
         #JURNAL ILMIAH
         if 'journal_title' in ref:
-            if cekJurnalIlmiah(ref):
-                worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
+            detail_format = cekJurnalIlmiah(ref)
+            if detail_format:
+                worksheet.write(row, 1, "Tidak Lengkap(" + listToString(detail_format) + ")", cell_format3)
                 format_lengkap += 1
                 format_lengkap_array.append(str(i+1))
             worksheet.write(row, 3, "Iya")
@@ -487,8 +573,9 @@ def refForm(request):
                 predatory += 1
                 predatory_array.append(str(i+1))
         elif 'journal_volume' in ref:
-            if cekJurnalIlmiah(ref):
-                worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
+            detail_format = cekJurnalIlmiah(ref)
+            if detail_format:
+                worksheet.write(row, 1, "Tidak Lengkap(" + listToString(detail_format) + ")", cell_format3)
                 format_lengkap += 1
                 format_lengkap_array.append(str(i+1))
             worksheet.write(row, 3, "Iya")
@@ -503,8 +590,9 @@ def refForm(request):
                 predatory += 1
                 predatory_array.append(str(i+1))
         elif 'journal_year' in ref:
-            if cekJurnalIlmiah(ref):
-                worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
+            detail_format = cekJurnalIlmiah(ref)
+            if detail_format:
+                worksheet.write(row, 1, "Tidak Lengkap(" + listToString(detail_format) + ")", cell_format3)
                 format_lengkap += 1
                 format_lengkap_array.append(str(i+1))
             worksheet.write(row, 3, "Iya")
@@ -519,8 +607,9 @@ def refForm(request):
                 predatory += 1
                 predatory_array.append(str(i+1))
         elif 'journal_page' in ref:
-            if cekJurnalIlmiah(ref):
-                worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
+            detail_format = cekJurnalIlmiah(ref)
+            if detail_format:
+                worksheet.write(row, 1, "Tidak Lengkap(" + listToString(detail_format) + ")", cell_format3)
                 format_lengkap += 1
                 format_lengkap_array.append(str(i+1))
             worksheet.write(row, 3, "Iya")
@@ -535,8 +624,9 @@ def refForm(request):
                 predatory += 1
                 predatory_array.append(str(i+1))
         elif 'journal_references' in ref:
-            if cekJurnalIlmiah(ref):
-                worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
+            detail_format = cekJurnalIlmiah(ref)
+            if detail_format:
+                worksheet.write(row, 1, "Tidak Lengkap(" + listToString(detail_format) + ")", cell_format3)
                 format_lengkap += 1
                 format_lengkap_array.append(str(i+1))
             worksheet.write(row, 3, "Iya")
@@ -552,8 +642,9 @@ def refForm(request):
                 predatory_array.append(str(i+1))
         elif 'misc' in ref:
             if 'Journal' in listToString(ref['misc']):
-                if cekJurnalIlmiah(ref):
-                    worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
+                detail_format = cekJurnalIlmiah(ref)
+                if detail_format:
+                    worksheet.write(row, 1, "Tidak Lengkap(" + listToString(detail_format) + ")", cell_format3)
                     format_lengkap += 1
                     format_lengkap_array.append(str(i+1))
                 worksheet.write(row, 3, "Iya")
@@ -568,8 +659,9 @@ def refForm(request):
                     predatory += 1
                     predatory_array.append(str(i+1))
             elif 'Jurnal' in listToString(ref['misc']):
-                if cekJurnalIlmiah(ref):
-                    worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
+                detail_format = cekJurnalIlmiah(ref)
+                if detail_format:
+                    worksheet.write(row, 1, "Tidak Lengkap(" + listToString(detail_format) + ")", cell_format3)
                     format_lengkap += 1
                     format_lengkap_array.append(str(i+1))
                 worksheet.write(row, 3, "Iya")
@@ -588,8 +680,9 @@ def refForm(request):
                 primer += 1
                 primer_array.append(str(i+1))
                 worksheet.write(row, 3, "Iya")
-                if cekConference(ref):
-                    worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
+                detail_format = cekConference(ref)
+                if detail_format:
+                    worksheet.write(row, 1, "Tidak Lengkap(" + listToString(detail_format) + ")", cell_format3)
                     format_lengkap += 1
                     format_lengkap_array.append(str(i+1))
                 if sumberReputasi(ref, 'conf'):
@@ -600,8 +693,9 @@ def refForm(request):
                 primer += 1
                 primer_array.append(str(i+1))
                 worksheet.write(row, 3, "Iya")
-                if cekConference(ref):
-                    worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
+                detail_format = cekConference(ref)
+                if detail_format:
+                    worksheet.write(row, 1, "Tidak Lengkap(" + listToString(detail_format) + ")", cell_format3)
                     format_lengkap += 1
                     format_lengkap_array.append(str(i+1))
                 if sumberReputasi(ref, 'conf'):
@@ -612,8 +706,9 @@ def refForm(request):
                 primer += 1
                 primer_array.append(str(i+1))            
                 worksheet.write(row, 3, "Iya")
-                if cekConference(ref):
-                    worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
+                detail_format = cekConference(ref)
+                if detail_format:
+                    worksheet.write(row, 1, "Tidak Lengkap(" + listToString(detail_format) + ")", cell_format3)
                     format_lengkap += 1
                     format_lengkap_array.append(str(i+1))
                 if sumberReputasi(ref, 'conf'):
@@ -624,8 +719,9 @@ def refForm(request):
                 primer += 1
                 primer_array.append(str(i+1))
                 worksheet.write(row, 3, "Iya")
-                if cekConference(ref):
-                    worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
+                detail_format = cekConference(ref)
+                if detail_format:
+                    worksheet.write(row, 1, "Tidak Lengkap(" + listToString(detail_format) + ")", cell_format3)
                     format_lengkap += 1
                     format_lengkap_array.append(str(i+1))
                 if sumberReputasi(ref, 'conf'):
@@ -636,8 +732,9 @@ def refForm(request):
                 primer += 1
                 primer_array.append(str(i+1))
                 worksheet.write(row, 3, "Iya")
-                if cekConference(ref):
-                    worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
+                detail_format = cekConference(ref)
+                if detail_format:
+                    worksheet.write(row, 1, "Tidak Lengkap(" + listToString(detail_format) + ")", cell_format3)
                     format_lengkap += 1
                     format_lengkap_array.append(str(i+1))
                 if sumberReputasi(ref, 'conf'):
@@ -648,8 +745,9 @@ def refForm(request):
                 primer += 1
                 primer_array.append(str(i+1))
                 worksheet.write(row, 3, "Iya")
-                if cekConference(ref):
-                    worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
+                detail_format = cekConference(ref)
+                if detail_format:
+                    worksheet.write(row, 1, "Tidak Lengkap(" + listToString(detail_format) + ")", cell_format3)
                     format_lengkap += 1
                     format_lengkap_array.append(str(i+1))
                 if sumberReputasi(ref, 'conf'):
@@ -699,8 +797,9 @@ def refForm(request):
                 
             #LAIN LAIN
             elif 'vol. ' in listToString(ref['misc']):
-                if cekJurnalIlmiah(ref):
-                    worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
+                detail_format = cekJurnalIlmiah(ref)
+                if detail_format:
+                    worksheet.write(row, 1, "Tidak Lengkap(" + listToString(detail_format) + ")", cell_format3)
                     format_lengkap += 1
                     format_lengkap_array.append(str(i+1))
                 primer += 1
@@ -716,16 +815,18 @@ def refForm(request):
                     predatory_array.append(str(i+1))
             #PP DI KOMEN SEMENTARA
             #elif 'pp. ' in listToString(ref['misc']):
-            #    if cekJurnalIlmiah(ref):
-            #        worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
+            #    detail_format = cekJurnalIlmiah(ref)
+            #    if detail_format:
+            #        worksheet.write(row, 1, "Tidak Lengkap(" + listToString(detail_format) + ")", cell_format3)
             #        format_lengkap += 1
             #        format_lengkap_array.append(str(i+1))
             #    primer += 1
             #    primer_array.append(str(i+1))
             #    worksheet.write(row, 3, "Iya")
             elif 'no. ' in listToString(ref['misc']):
-                if cekJurnalIlmiah(ref):
-                    worksheet.write(row, 1, "Tidak Lengkap", cell_format3)
+                detail_format = cekJurnalIlmiah(ref)
+                if detail_format:
+                    worksheet.write(row, 1, "Tidak Lengkap(" + listToString(detail_format) + ")", cell_format3)
                     format_lengkap += 1
                     format_lengkap_array.append(str(i+1))
                 worksheet.write(row, 3, "Iya")
@@ -741,12 +842,12 @@ def refForm(request):
                     predatory_array.append(str(i+1))
             else:
                 cell_format2.set_bg_color('red')
-                worksheet.write(row, 1, "Tidak Lengkap", cell_format2)
+                worksheet.write(row, 1, "Tidak Lengkap(*TT)", cell_format2)
                 format_lengkap += 1
                 format_lengkap_array.append(str(i+1))
         else:
             cell_format2.set_bg_color('red')
-            worksheet.write(row, 1, "Tidak Lengkap", cell_format2)
+            worksheet.write(row, 1, "Tidak Lengkap(*TT)", cell_format2)
             format_lengkap += 1
             format_lengkap_array.append(str(i+1))
         row += 1
@@ -798,9 +899,26 @@ def refForm(request):
         worksheet_narasi.write('A7', 'Format Lengkap', cell_format_format)
         worksheet_narasi.write('B7', narasi_format, cell_format_primer2)
     else:
+        cell_format_format.set_bg_color('#00ac56')
         narasi_format = 'Format yang digunakan pada referensi ini sudah lengkap. Referensi dianggap lengkap jika sudah mengikuti aturan referensi IEEE. Selain itu, referensi diluar Jurnal, Conference, Buku, Thesis, dan Disertasi juga akan dianggap tidak lengkap'
         worksheet_narasi.write('A7', 'Format Lengkap', cell_format_format)
         worksheet_narasi.write('B7', narasi_format, cell_format_primer2)
+
+    #WRITE TERSITASI IN OUTPUT NARASI
+    cell_format_tersitasi = workbook.add_format()
+    cell_format_tersitasi.set_border()
+    cell_format_tersitasi.set_text_wrap()
+    len_not_citated = len(not_citated)
+    if len_not_citated > 0:
+        cell_format_tersitasi.set_bg_color('red')
+        narasi_format = 'Terdapat ' + str(len_not_citated) + ' referensi yang tidak tersitasi pada naskah. Referensi dianggap tidak tersitasi pada naskah ketika referensi pada artikel ilmiah sama sekali tidak disitasi pada keseluruhan artikel. \n \nReferensi dengan nomor ' + listToString(not_citated) + ' tidak disitasi pada naskah'
+        worksheet_narasi.write('A8', 'Tersitasi Pada Naskah', cell_format_tersitasi)
+        worksheet_narasi.write('B8', narasi_format, cell_format_primer2)
+    else:
+        cell_format_tersitasi.set_bg_color('#00ac56')
+        narasi_format = 'Seluruh referensi telah disitasi pada naskah minimal 1 kali. Referensi dianggap tidak tersitasi pada naskah ketika referensi pada artikel ilmiah sama sekali tidak disitasi pada keseluruhan artikel.'
+        worksheet_narasi.write('A8', 'Tersitasi Pada Naskah', cell_format_tersitasi)
+        worksheet_narasi.write('B8', narasi_format, cell_format_primer2)
 
     #WRITE SUMBER REPUTASI
 
@@ -826,15 +944,17 @@ def refForm(request):
 
     if reputasi_percentage > 20:
         narasi_reputasi = 'Referensi yang digunakan pada pada paper ini masuk kedalam white list scopus sebesar ' + str(reputasi_percentage_str2) + '%.\n \nRefernsi dengan Nomor '+ listToString(reputasi_array3) +' terindeks dalam white list scopus'
-        worksheet_narasi.write('A8', 'White List', cell_format_reputasi)
-        worksheet_narasi.write('B8', narasi_reputasi, cell_format_reputasi)
+        worksheet_narasi.write('A9', 'White List', cell_format_reputasi)
+        worksheet_narasi.write('B9', narasi_reputasi, cell_format_reputasi)
     else:
         if (len(reputasi_array3) > 0):
             narasi_reputasi = 'Referensi yang digunakan pada pada paper ini masuk kedalam white list scopus sebesar ' + str(reputasi_percentage_str2) +'%. \n \nRefernsi dengan Nomor '+ listToString(reputasi_array3) +' terindeks dalam white list scopus'
         else:
             narasi_reputasi = 'Referensi yang digunakan pada pada paper ini masuk kedalam white list scopus sebesar ' + str(reputasi_percentage_str2) +'%.'
-        worksheet_narasi.write('A8', 'White List', cell_format_reputasi)
-        worksheet_narasi.write('B8', narasi_reputasi, cell_format_reputasi)
+        worksheet_narasi.write('A9', 'White List', cell_format_reputasi)
+        worksheet_narasi.write('B9', narasi_reputasi, cell_format_reputasi)
+    
+
 
     #WRITE PREDATORY
     
@@ -860,15 +980,15 @@ def refForm(request):
 
     if predatory_percentage > 20:
         narasi_predatory = 'Referensi yang digunakan pada pada paper ini masuk kedalam black list sebesar ' + str(predatory_percentage_str2) + '%. Data black list yang digunakan berasal dari bealls list. \n \nReferensi dengan Nomor'+ listToString(predatory_array3) +'terindeks dalam black list.' 
-        worksheet_narasi.write('A9', 'Black List', cell_format_predatory)
-        worksheet_narasi.write('B9', narasi_predatory, cell_format_predatory)
+        worksheet_narasi.write('A10', 'Black List', cell_format_predatory)
+        worksheet_narasi.write('B10', narasi_predatory, cell_format_predatory)
     else:
         if (len(predatory_array3) > 0):
             narasi_predatory = 'Referensi yang digunakan pada pada paper ini masuk kedalam black list sebesar ' + str(predatory_percentage_str2) +'%. Data black list yang digunakan berasal dari bealls list. \n \nReferensi dengan Nomor'+ listToString(predatory_array3) +'terindeks dalam black list.'
         else:
             narasi_predatory = 'Referensi yang digunakan pada pada paper ini masuk kedalam black list sebesar ' + str(predatory_percentage_str2) +'%. Data black list yang digunakan berasal dari bealls list'
-        worksheet_narasi.write('A9', 'Black List', cell_format_predatory)
-        worksheet_narasi.write('B9', narasi_predatory, cell_format_predatory)
+        worksheet_narasi.write('A10', 'Black List', cell_format_predatory)
+        worksheet_narasi.write('B10', narasi_predatory, cell_format_predatory)
 
     workbook.close()
 
