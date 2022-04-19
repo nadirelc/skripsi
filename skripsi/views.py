@@ -29,7 +29,7 @@ def refForm(request):
 
     #END DATA SINGKATAN
     abv_dict = {}
-    file_loc = os.path.join(os.path.dirname(os.path.dirname(__file__)),'media/excel/dict1_abv_fix.xlsx')
+    file_loc = os.path.join(os.path.dirname(os.path.dirname(__file__)),'media/excel/abbreviation_dictionary.xlsx')
     wb_obj = openpyxl.load_workbook(file_loc)
     sheet_obj = wb_obj.active
     m_row = sheet_obj.max_row
@@ -52,7 +52,7 @@ def refForm(request):
         array_city.append(cell_obj.value)
 
     #DATA SCOPUS
-    file_city2 =  os.path.join(os.path.dirname(os.path.dirname(__file__)),'media/excel/listNew.xlsx')
+    file_city2 =  os.path.join(os.path.dirname(os.path.dirname(__file__)),'media/excel/scopus_journal.xlsx')
     wb_obj2 = openpyxl.load_workbook(file_city2)
     sheet_obj2 = wb_obj2.active
     cell_obj2 = sheet_obj2.cell(row = 1, column = 1)
@@ -84,7 +84,7 @@ def refForm(request):
         array_predatory.append(cell_obj5.value)
 
     #DATA SCOPUS CONF
-    file_city3 =  os.path.join(os.path.dirname(os.path.dirname(__file__)),'media/excel/listNew2.xlsx')
+    file_city3 =  os.path.join(os.path.dirname(os.path.dirname(__file__)),'media/excel/scopus_conference.xlsx')
     wb_obj3 = openpyxl.load_workbook(file_city3)
     sheet_obj3 = wb_obj3.active
     cell_obj3 = sheet_obj3.cell(row = 1, column = 1)
