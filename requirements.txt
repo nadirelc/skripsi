@@ -1,0 +1,7 @@
+Django==3.2.4
+gensim==4.1.2
+openpyxl==3.0.9
+refextract==1.1.4
+slate3k==0.5.3
+Unidecode==1.2.0
+XlsxWriter==3.0.2

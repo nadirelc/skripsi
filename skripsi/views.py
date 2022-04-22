@@ -18,7 +18,6 @@ import openpyxl
 import re
 import slate3k
 import urllib.request
-import io
 
 
 def index(request):
