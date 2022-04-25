@@ -8,7 +8,7 @@ Dalam berjalannya fungsi aplikasi, digunakan banyak data, seperti data jurnal te
 
 # Instalasi
 
- 1. Masuk atau buat direktori untuk menginstall aplikasi
+1. Masuk atau buat direktori untuk menginstall aplikasi
 	 ```sh
 	mkdir *nama_direktori/ cd *direktori
 	```
@@ -16,25 +16,34 @@ Dalam berjalannya fungsi aplikasi, digunakan banyak data, seperti data jurnal te
 	 ```sh
 	git clone https://github.com/nadirelc/skripsi.git
 	```
-3. Masuk kedalam Folder Repository
+3. Masuk kedalam Virtual Environment Python agar bisa mengakses Framework Django
+4. Masuk kedalam Folder Repository
 	 ```sh
 	cd skripsi
 	```
-4. Install library/package yang diperlukan
+5. Install library/package yang diperlukan
 	 ```sh
 	pip install -r requirements.txt
 	```
-5. Jalankan aplikasi
+6. Uninstall library python-magic
+ 	 ```sh
+	pip uninstall python-magic
+	```
+7. Install library python-magic-bin
+ 	 ```sh
+	pip uninstall python-magic-bin
+	```
+8. Jalankan aplikasi
 	 ```sh
 	python manage.py runserver
 	```
-6. Akses Website melalui localhost
+9. Akses Website melalui localhost
 	```
 	Akses aplikasi web di browser http://127.0.0.1:8000/
 	```
 
 # Petunjuk Penggunaan
-1. Masukkan Nama Author yang ada pada paper yang ingin dianalisis
+1. Masukkan Nama Author yang ada pada paper yang ingin dianalisis (Tombol Tambah Author bisa digunakan jika Author lebih dari 1)
 2. Masukkan file paper berformat pdf
 3. Klik submit, lalu file hasil analisis berbentuk excel akan otomatis terunduh
 
