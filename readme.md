@@ -31,7 +31,7 @@ Dalam berjalannya fungsi aplikasi, digunakan banyak data, seperti data jurnal te
 	```
 7. Install library python-magic-bin
  	 ```sh
-	pip uninstall python-magic-bin
+	pip install python-magic-bin
 	```
 8. Jalankan aplikasi
 	 ```sh
@@ -46,8 +46,6 @@ Dalam berjalannya fungsi aplikasi, digunakan banyak data, seperti data jurnal te
 1. Masukkan Nama Author yang ada pada paper yang ingin dianalisis (Tombol Tambah Author bisa digunakan jika Author lebih dari 1)
 2. Masukkan file paper berformat pdf
 3. Klik submit, lalu file hasil analisis berbentuk excel akan otomatis terunduh
-
-All your files and folders are presented as a tree in the file explorer. You can switch from one to another by clicking a file in the tree.
 
 # Informasi peneliti
 <a  href="https://www.linkedin.com/in/nadirelc/"  target="_blank"><img  src="https://user-images.githubusercontent.com/67138576/121289494-34a73d80-c90f-11eb-8811-7904e7b88606.png"  width="90"  height="90"></a> 
